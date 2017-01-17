@@ -795,7 +795,7 @@ var Compiler = Object.extend({
         this._compileAsyncLoop(node, frame, true);
     },
 
-    _compileMacro: function(node) {
+    _compileMacro: function(node, frame) {
         var args = [];
         var kwargs = null;
         var funcId = 'macro_' + this.tmpid();
@@ -824,16 +824,21 @@ var Compiler = Object.extend({
         // arguments so support setting positional args with keywords
         // args and passing keyword args as positional args
         // (essentially default values). See runtime.js.
-        var frame = new Frame();
+        var embedded = !!frame.parent;
+        frame = frame.push();
         this.emitLines(
             'var ' + funcId + ' = runtime.makeMacro(',
             '[' + argNames.join(', ') + '], ',
             '[' + kwargNames.join(', ') + '], ',
             'function (' + realNames.join(', ') + ') {',
-            'var callerFrame = frame;',
-            'if (callerFrame.topLevel) {',
-            'frame = new runtime.Frame(); } else {',
-            'frame = new runtime.Frame(callerFrame); }',
+            'var callerFrame = frame;'
+        );
+        if (embedded) {
+            this.emitLine('frame = new runtime.Frame(callerFrame);');
+        } else {
+            this.emitLine('frame = new runtime.Frame();');
+        }
+        this.emitLines(
             'kwargs = kwargs || {};',
             'if (kwargs.hasOwnProperty("caller")) {',
             'frame.set("caller", kwargs.caller); }'
@@ -867,6 +872,7 @@ var Compiler = Object.extend({
           this.compile(node.body, frame);
         });
 
+        frame.pop();
         this.emitLine('frame = callerFrame;');
         this.emitLine('return new runtime.SafeString(' + bufferId + ');');
         this.emitLine('});');
