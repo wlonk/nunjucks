@@ -831,7 +831,9 @@ var Compiler = Object.extend({
             '[' + kwargNames.join(', ') + '], ',
             'function (' + realNames.join(', ') + ') {',
             'var callerFrame = frame;',
-            'frame = new runtime.Frame();',
+            'if (callerFrame.topLevel) {',
+            'frame = new runtime.Frame(); } else {',
+            'frame = new runtime.Frame(callerFrame); }',
             'kwargs = kwargs || {};',
             'if (kwargs.hasOwnProperty("caller")) {',
             'frame.set("caller", kwargs.caller); }'
