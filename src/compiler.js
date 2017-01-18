@@ -830,8 +830,10 @@ var Compiler = Object.extend({
             '[' + argNames.join(', ') + '], ',
             '[' + kwargNames.join(', ') + '], ',
             'function (' + realNames.join(', ') + ') {',
-            'var callerFrame = frame;',
-            'frame = new runtime.Frame();',
+            // @@@TODO when any parent of this is a macro (which should handle
+            // caller situations, as well), we need this to be
+            // `new runtime.Frame(frame)`.
+            'var frame = new runtime.Frame();',
             'kwargs = kwargs || {};',
             'if (kwargs.hasOwnProperty("caller")) {',
             'frame.set("caller", kwargs.caller); }'
@@ -865,7 +867,6 @@ var Compiler = Object.extend({
           this.compile(node.body, frame);
         });
 
-        this.emitLine('frame = callerFrame;');
         this.emitLine('return new runtime.SafeString(' + bufferId + ');');
         this.emitLine('});');
         this.popBufferId();
